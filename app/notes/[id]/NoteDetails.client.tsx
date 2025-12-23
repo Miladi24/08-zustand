@@ -1,14 +1,16 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNoteById } from "@/lib/api";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import css from "./NoteDetailsClient.module.css";
 
-const NoteDetailsClient = () => {
-  const { id } = useParams<{ id: string }>();
+type Props = {
+  noteId: string;
+};
+
+const NoteDetailsClient = ({ noteId }: Props) => {
   const router = useRouter();
   const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
@@ -17,43 +19,32 @@ const NoteDetailsClient = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["note", id],
-    queryFn: () => fetchNoteById(id),
-    refetchOnMount: false,
+    queryKey: ["note", noteId],
+    queryFn: () => fetchNoteById(noteId),
+    enabled: !!noteId,
   });
 
   useEffect(() => {
-    if (note) {
-      const date = new Date(note.createdAt);
-      setFormattedDate(date.toLocaleString());
+    if (note?.createdAt) {
+      setFormattedDate(new Date(note.createdAt).toLocaleString());
     }
   }, [note]);
 
-  if (isLoading) {
-    return <p>Loading, please wait...</p>;
-  }
-
-  if (error || !note) {
-    return <p>Something went wrong.</p>;
-  }
-
-  const handleGoBack = () => {
-    const isSure = confirm(" Are you sure?");
-    if (isSure) {
-      router.back();
-    }
-  };
+  if (isLoading) return <p>Loading, please wait...</p>;
+  if (error || !note) return <p>Something went wrong.</p>;
 
   return (
     <div className={css.container}>
       <div className={css.item}>
-        <button className={css.backBtn} onClick={handleGoBack}>
+        <button className={css.backBtn} onClick={() => router.back()}>
           Back
         </button>
+
         <div className={css.header}>
-          <h2>{note?.title}</h2>
+          <h2>{note.title}</h2>
         </div>
-        <p className={css.content}>{note?.content}</p>
+
+        <p className={css.content}>{note.content}</p>
         <p className={css.date}>Created: {formattedDate}</p>
       </div>
     </div>
