@@ -1,52 +1,53 @@
-import { fetchNoteById } from '@/lib/api';
-import { Metadata } from 'next';
+import { fetchNoteById } from "@/lib/api";
+import NoteDetailsClient from "./NoteDetails.client";
+import { Metadata } from "next";
 import {
-  QueryClient,
-  HydrationBoundary,
   dehydrate,
-} from '@tanstack/react-query';
-import NoteDetailsClient from './NoteDetails.client';
+  HydrationBoundary,
+  QueryClient,
+} from "@tanstack/react-query";
 
-interface NotePageProps {
-  params: Promise<{ id: string }>;
-}
+type PageProps = {
+  params: { id: string };
+};
 
-export async function generateMetadata({
-  params,
-}: NotePageProps): Promise<Metadata> {
-  const { id } = await params;
-  const note = await fetchNoteById(id);
+/* ---------- Metadata ---------- */
+export async function generateMetadata(
+  { params }: PageProps
+): Promise<Metadata> {
+  const note = await fetchNoteById(params.id);
+
   return {
     title: `Note: ${note.title}`,
-    description: note.content.slice(0, 30),
+    description: note.content.slice(0, 50),
     openGraph: {
-      title: `Note: ${note.title}`,
-      description: note.content.slice(0, 100),
-      url: `https://notehub.com/notes/${id}`,
+      title: note.title,
+      description: note.content,
+      url: `/notes/${params.id}`,
       images: [
         {
-          url: 'https://ac.goit.global/fullstack/react/og-meta.jpg',
+          url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
           width: 1200,
           height: 630,
-          alt: note.title,
+          alt: "NoteHub – modern note-taking app",
         },
       ],
     },
   };
 }
 
-export default async function NotePage({ params }: NotePageProps) {
+/* ---------- Page ---------- */
+export default async function NoteDetails({ params }: PageProps) {
   const queryClient = new QueryClient();
-  const { id } = await params;
 
   await queryClient.prefetchQuery({
-    queryKey: ['note', id],
-    queryFn: () => fetchNoteById(id),
+    queryKey: ["note", params.id],
+    queryFn: () => fetchNoteById(params.id),
   });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NoteDetailsClient />
+      <NoteDetailsClient noteId={params.id} />
     </HydrationBoundary>
   );
 }
