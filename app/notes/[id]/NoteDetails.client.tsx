@@ -1,54 +1,38 @@
 "use client";
 
+import css from "./NoteDetails.module.css";
+
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNoteById } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import css from "./NoteDetailsClient.module.css";
 
-type Props = {
-  noteId: string;
-};
+export default function NoteDetailsClient() {
+  const { id } = useParams();
 
-const NoteDetailsClient = ({ noteId }: Props) => {
-  const router = useRouter();
-  const [formattedDate, setFormattedDate] = useState<string | null>(null);
-
-  const {
-    data: note,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["note", noteId],
-    queryFn: () => fetchNoteById(noteId),
-    enabled: !!noteId,
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["note", id],
+    queryFn: () => fetchNoteById(id as string),
+    refetchOnMount: false,
   });
 
-  useEffect(() => {
-    if (note?.createdAt) {
-      setFormattedDate(new Date(note.createdAt).toLocaleString());
-    }
-  }, [note]);
-
-  if (isLoading) return <p>Loading, please wait...</p>;
-  if (error || !note) return <p>Something went wrong.</p>;
+  
+    {isLoading && <p>Note details loading, please wait...</p>;
+    isError && <p>Something went wrong.</p>;}
+  
+  if (!data) return null;
 
   return (
-    <div className={css.container}>
-      <div className={css.item}>
-        <button className={css.backBtn} onClick={() => router.back()}>
-          Back
-        </button>
-
-        <div className={css.header}>
-          <h2>{note.title}</h2>
+    <>
+      <div className={css.container}>
+        <div className={css.item}>
+          <div className={css.header}>
+            <h2>{data.title}</h2>
+          </div>
+          <p className={css.content}>{data.content}</p>
+          <p className={css.date}>Created date: {data.createdAt}</p>
+          <p className={css.tag}>{data.tag}</p>
         </div>
-
-        <p className={css.content}>{note.content}</p>
-        <p className={css.date}>Created: {formattedDate}</p>
       </div>
-    </div>
+    </>
   );
-};
-
-export default NoteDetailsClient;
+}
